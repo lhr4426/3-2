@@ -127,14 +127,19 @@ def SIFT(src):
         ## np.max, np.argmax를 활용하면 쉽게 구할 수 있음
         ## keypoints[i].angle = ???
         ###################################################################
-        max_angle_arg = int(np.argmax(orient_hist)) * 10
-        max_hist = np.max(orient_hist)
-        max_hist_0_8 = 0.8 * max_hist
-        keypoints[i].angle = max_angle_arg
+        max_orient_hist = np.max(orient_hist)
+        argmax_orient_hist = np.argmax(orient_hist)
+        keypoint_angle = int(argmax_orient_hist) * 10
+        keypoints[i].angle = keypoint_angle
 
-        for j in range(0, 36) :
-            if j is not int(np.argmax(orient_hist)) and orient_hist[j] >= max_hist_0_8 :
+        for j in range(len(orient_hist)) :
+            if j != int(argmax_orient_hist) and orient_hist[j] > (0.8 * max_orient_hist) :
                 keypoints.append(KeyPoint(x, y, keypoints[i].size, j * 10, keypoints[i].response, keypoints[i].octave, keypoints[i].class_id))
+        
+        assert keypoints[i].angle != -1
+
+        # 여기서 값이 큰 각도 자체는 이미 뽑음
+
 
     print('calculate descriptor')
     descriptors = np.zeros((len(keypoints), 128))  # 8 orientation * 4 * 4 = 128 dimensions
@@ -169,32 +174,19 @@ def SIFT(src):
                 gaussian_weight = np.exp((-1 / 32) * (row_rot ** 2 + col_rot ** 2))
                 weight = np.sqrt((p_x ** 2) + (p_y ** 2)) * gaussian_weight
 
-                point_angle = (np.rad2deg(np.arctan2(p_y, p_x)) + 360) % 360
-                point_angle = point_angle - np.rad2deg(theta)
-                point_angle = (point_angle + 360) % 360
+                descriptor_angle = (np.rad2deg(np.arctan2(p_y, p_x)) + 360) % 360 - keypoints[i].angle
+                descriptor_angle = abs(descriptor_angle)
 
+                x_group = (col + 8) // 4
+                y_group = (row + 8) // 4
+                index_start = (y_group * 32) + (x_group * 8)
 
-                # # p_y, p_x로 각도를 구해서 degree 값으로 바꿈 (0 ~ 360)
-                # angle = (np.rad2deg(np.arctan2(p_y, p_x)) + 360) % 360
+                descriptors[i][index_start + int((descriptor_angle // 45))] += weight
+                # print(f"{i} Descriptors : angle = {descriptor_angle}, angle_bin = {descriptor_angle // 45}, plus_weight = {weight}")
+                keypoints[i].angle = descriptor_angle
 
-                # # p_y, p_x로 구한 각도랑 keypoint의 angle의 차를 구해야 함 
+        # print(descriptors[i])
 
-                # angle = angle - np.rad2deg(theta)
-                
-                # angle = np.deg2rad(np.arctan2(p_y, p_x)) - theta
-                
-                # angle = np.arctan2(p_y,p_x) - keypoints[i].angle
-                # angle = np.rad2deg(angle)
-
-
-                trans_row = row + 8 # row : 0 ~ 15
-                trans_col = col + 8 # col : 0 ~ 15
-
-                slice_start_point = (trans_row // 4) * 32 + (trans_col // 4) * 8
-                # (trans_row // 4) * 32 + (trans_col // 4) * 8 + int(angle//45)
-                
-                descriptors[i][slice_start_point + int(point_angle//45)] += weight
-                
     return keypoints, descriptors
 
 
