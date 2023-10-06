@@ -166,22 +166,26 @@ def SIFT(src):
                 ## 최종적으로 128개 (8개의 orientation * 4 * 4)의 descriptor를 가짐
                 ## gaussian_weight = np.exp((-1 / 16) * (row_rot ** 2 + col_rot ** 2))
                 ###################################################################
-                gaussian_weight = np.exp((-1 / 16) * (row_rot ** 2 + col_rot ** 2))
+                gaussian_weight = np.exp((-1 / 32) * (row_rot ** 2 + col_rot ** 2))
                 weight = np.sqrt((p_x ** 2) + (p_y ** 2)) * gaussian_weight
 
-                # p_y, p_x로 각도를 구해서 degree 값으로 바꿈 (0 ~ 360)
-                angle = (np.rad2deg(np.arctan2(p_y, p_x)) + 360) % 360
+                point_angle = (np.rad2deg(np.arctan2(p_y, p_x)) + 360) % 360
+                point_angle = point_angle - np.rad2deg(theta)
+                point_angle = (point_angle + 360) % 360
 
-                # p_y, p_x로 구한 각도랑 keypoint의 angle의 차를 구해야 함 
 
-                angle = angle - np.rad2deg(theta)
+                # # p_y, p_x로 각도를 구해서 degree 값으로 바꿈 (0 ~ 360)
+                # angle = (np.rad2deg(np.arctan2(p_y, p_x)) + 360) % 360
+
+                # # p_y, p_x로 구한 각도랑 keypoint의 angle의 차를 구해야 함 
+
+                # angle = angle - np.rad2deg(theta)
                 
                 # angle = np.deg2rad(np.arctan2(p_y, p_x)) - theta
                 
                 # angle = np.arctan2(p_y,p_x) - keypoints[i].angle
                 # angle = np.rad2deg(angle)
 
-                angle = np.abs(angle)
 
                 trans_row = row + 8 # row : 0 ~ 15
                 trans_col = col + 8 # col : 0 ~ 15
@@ -189,7 +193,7 @@ def SIFT(src):
                 slice_start_point = (trans_row // 4) * 32 + (trans_col // 4) * 8
                 # (trans_row // 4) * 32 + (trans_col // 4) * 8 + int(angle//45)
                 
-                descriptors[i][slice_start_point + int(angle//45)] += weight
+                descriptors[i][slice_start_point + int(point_angle//45)] += weight
                 
     return keypoints, descriptors
 

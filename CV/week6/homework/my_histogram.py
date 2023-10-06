@@ -67,7 +67,7 @@ def show_patch_hist(patch_vector):
 
 
 def main():
-    src = cv2.imread('Lena.png')
+    src = cv2.imread('CV\week6\homework\Lena.png')
     gray = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
     print('get Ix and Iy...')
     Ix, Iy = calc_derivatives(gray)
