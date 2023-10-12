@@ -134,12 +134,9 @@ def SIFT(src):
 
         for j in range(len(orient_hist)) :
             if j != int(argmax_orient_hist) and orient_hist[j] > (0.8 * max_orient_hist) :
-                keypoints.append(KeyPoint(x, y, keypoints[i].size, j * 10, keypoints[i].response, keypoints[i].octave, keypoints[i].class_id))
-        
-        assert keypoints[i].angle != -1
-
-        # 여기서 값이 큰 각도 자체는 이미 뽑음
-
+                keypoints.append(KeyPoint(x, y, keypoints[i].size, j * 10, 
+                                          keypoints[i].response, keypoints[i].octave, 
+                                          keypoints[i].class_id))
 
     print('calculate descriptor')
     descriptors = np.zeros((len(keypoints), 128))  # 8 orientation * 4 * 4 = 128 dimensions
@@ -172,20 +169,17 @@ def SIFT(src):
                 ## gaussian_weight = np.exp((-1 / 16) * (row_rot ** 2 + col_rot ** 2))
                 ###################################################################
                 gaussian_weight = np.exp((-1 / 32) * (row_rot ** 2 + col_rot ** 2))
-                weight = np.sqrt((p_x ** 2) + (p_y ** 2)) * gaussian_weight
+                weight = magnitude[p_y, p_x] * gaussian_weight
+                descriptor_angle = angle[p_y, p_x] - keypoints[i].angle
+                descriptors[i][int(descriptor_angle // 45)] += weight
 
-                descriptor_angle = (np.rad2deg(np.arctan2(p_y, p_x)) + 360) % 360 - keypoints[i].angle
-                descriptor_angle = abs(descriptor_angle)
-
-                x_group = (col + 8) // 4
-                y_group = (row + 8) // 4
-                index_start = (y_group * 32) + (x_group * 8)
-
-                descriptors[i][index_start + int((descriptor_angle // 45))] += weight
-                # print(f"{i} Descriptors : angle = {descriptor_angle}, angle_bin = {descriptor_angle // 45}, plus_weight = {weight}")
-                keypoints[i].angle = descriptor_angle
-
-        # print(descriptors[i])
+                # 아래의 방법 사용 시 성능이 좋지 않음
+                
+                # x_group = (col + 8) // 4
+                # y_group = (row + 8) // 4
+                # index_start = (y_group * 32) + (x_group * 8)
+                # descriptors[i][index_start + int((descriptor_angle // 45))] += weight
+                
 
     return keypoints, descriptors
 
